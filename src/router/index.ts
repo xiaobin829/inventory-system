@@ -28,6 +28,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/inventory/material/index.vue'),
         meta: { title: '原材料管理' }
       },
+      // 成品管理
+      {
+        path: '/inventory/product',
+        name: 'Product',
+        component: () => import('@/views/inventory/product/index.vue'),
+        meta: { title: '成品管理' }
+      },
       // 成本卡管理
       {
         path: '/inventory/cost-card',

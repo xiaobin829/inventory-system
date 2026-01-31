@@ -34,6 +34,10 @@
               原材料管理
             </t-menu-item>
 
+            <t-menu-item value="/inventory/product">
+              成品管理
+            </t-menu-item>
+
             <t-menu-item value="/inventory/cost-card">
               成本卡管理
             </t-menu-item>
