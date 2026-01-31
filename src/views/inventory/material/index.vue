@@ -156,7 +156,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
 import type { Material, MaterialQuery } from '@/types/material'
-import type { PaginationProps, TableColumnController } from 'tdesign-vue-next'
+import type { PaginationProps } from 'tdesign-vue-next'
 import CategoryTree from './components/CategoryTree.vue'
 import MaterialFormDialog from './components/MaterialFormDialog.vue'
 import ImportDialog from './components/ImportDialog.vue'
@@ -188,7 +188,7 @@ const pagination = reactive<PaginationProps>({
 })
 
 // 表格列配置
-const columns: TableColumnController<Material>[] = [
+const columns: any[] = [
   {
     colKey: 'row-select',
     type: 'multiple',
@@ -197,8 +197,7 @@ const columns: TableColumnController<Material>[] = [
   {
     colKey: 'material',
     title: '物料',
-    width: 200,
-    cell: 'material'
+    width: 200
   },
   {
     colKey: 'categoryName',
@@ -218,27 +217,22 @@ const columns: TableColumnController<Material>[] = [
   {
     colKey: 'price',
     title: '价格',
-    width: 150,
-    cell: 'price'
+    width: 150
   },
   {
     colKey: 'stock',
     title: '库存设置',
-    width: 150,
-    cell: 'stock'
+    width: 150
   },
   {
     colKey: 'status',
     title: '状态',
-    width: 100,
-    cell: 'status'
+    width: 100
   },
   {
     colKey: 'action',
     title: '操作',
-    width: 200,
-    fixed: 'right',
-    cell: 'action'
+    width: 200
   }
 ]
 

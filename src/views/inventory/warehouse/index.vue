@@ -113,7 +113,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { MessagePlugin } from 'tdesign-vue-next'
 import type { Warehouse, WarehouseQuery, WarehouseType } from '@/types/warehouse'
-import type { PaginationProps, TableColumnController } from 'tdesign-vue-next'
+import type { PaginationProps } from 'tdesign-vue-next'
 import WarehouseFormDialog from './components/WarehouseFormDialog.vue'
 import DeleteConfirmDialog from './components/DeleteConfirmDialog.vue'
 import * as warehouseApi from '@/api/warehouse'
@@ -149,18 +149,17 @@ const pagination = reactive<PaginationProps>({
 })
 
 // 表格列配置
-const columns: TableColumnController<Warehouse>[] = [
+const columns: any[] = [
   {
     colKey: 'warehouse',
     title: '仓库',
-    width: 200,
-    cell: 'warehouse'
+    width: 200
   },
   {
     colKey: 'type',
     title: '类型',
     width: 150,
-    cell: (h, { row }) => {
+    cell: (_h: any, { row }: any) => {
       return row.type === 'distribution' ? '配送中心仓库' : '门店仓库'
     }
   },
@@ -182,21 +181,17 @@ const columns: TableColumnController<Warehouse>[] = [
   {
     colKey: 'status',
     title: '状态',
-    width: 100,
-    cell: 'status'
+    width: 100
   },
   {
     colKey: 'openingStatus',
     title: '期初状态',
-    width: 120,
-    cell: 'openingStatus'
+    width: 120
   },
   {
     colKey: 'action',
     title: '操作',
-    width: 240,
-    fixed: 'right',
-    cell: 'action'
+    width: 240
   }
 ]
 

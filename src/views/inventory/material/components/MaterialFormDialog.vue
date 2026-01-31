@@ -163,7 +163,7 @@
 import { ref, reactive, watch, onMounted } from 'vue'
 import { MessagePlugin } from 'tdesign-vue-next'
 import type { FormInstanceFunctions, FormRule } from 'tdesign-vue-next'
-import type { Material, MaterialFormData, MaterialCategory, MeasureUnit } from '@/types/material'
+import type { Material, MaterialFormData, MaterialCategory } from '@/types/material'
 import * as materialApi from '@/api/material'
 
 interface Props {
