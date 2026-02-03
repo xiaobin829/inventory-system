@@ -169,3 +169,187 @@ export interface OutboundBillFormData {
   outboundDate: string;
   remark?: string;
 }
+
+// 损耗类型
+export enum LossType {
+  EXPIRY = 'expiry',       // 过期损耗
+  DAMAGE = 'damage',       // 损坏
+  SHORTAGE = 'shortage',   // 盘亏
+  OTHER = 'other'          // 其他损耗
+}
+
+// 损耗单明细
+export interface LossDetail {
+  materialId: string;
+  materialName: string;
+  specification?: string;
+  unit: string;
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+}
+
+// 损耗单
+export interface LossOrder {
+  id: string;
+  billNo: string;
+  date: string;
+  warehouseId: string;
+  warehouseName: string;
+  lossType: LossType;
+  reason?: string;
+  items: LossDetail[];
+  totalQuantity: number;
+  totalAmount: number;
+  operatorId: string;
+  operatorName: string;
+  status: BillStatus;
+  createTime: string;
+}
+
+// 损耗单查询参数
+export interface LossOrderQuery {
+  lossType?: LossType;
+  status?: BillStatus;
+  keyword?: string;
+  startDate?: string;
+  endDate?: string;
+  page: number;
+  pageSize: number;
+}
+
+// 调拨单明细
+export interface TransferDetail {
+  materialId: string;
+  materialName: string;
+  specification?: string;
+  unit: string;
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+}
+
+// 调拨单
+export interface TransferOrder {
+  id: string;
+  billNo: string;
+  date: string;
+  fromWarehouseId: string;
+  fromWarehouseName: string;
+  toWarehouseId: string;
+  toWarehouseName: string;
+  reason?: string;
+  items: TransferDetail[];
+  totalQuantity: number;
+  totalAmount: number;
+  operatorId: string;
+  operatorName: string;
+  status: BillStatus;
+  createTime: string;
+}
+
+// 调拨单查询参数
+export interface TransferOrderQuery {
+  status?: BillStatus;
+  keyword?: string;
+  startDate?: string;
+  endDate?: string;
+  page: number;
+  pageSize: number;
+}
+
+// 盘点类型
+export enum CheckType {
+  FULL = 'full',       // 全盘
+  PARTIAL = 'partial', // 抽盘
+  SPOT = 'spot'        // 临时盘点
+}
+
+// 盘点明细
+export interface CheckDetail {
+  materialId: string;
+  materialName: string;
+  specification?: string;
+  unit: string;
+  bookQuantity: number;    // 账面数量
+  actualQuantity: number;  // 实际数量
+  diffQuantity: number;    // 差异数量
+  unitCost: number;
+  diffAmount: number;      // 差异金额
+}
+
+// 盘点单
+export interface CheckOrder {
+  id: string;
+  billNo: string;
+  date: string;
+  warehouseId: string;
+  warehouseName: string;
+  checkType: CheckType;
+  items: CheckDetail[];
+  totalQuantity: number;
+  totalDiffAmount: number;
+  operatorId: string;
+  operatorName: string;
+  status: BillStatus;
+  createTime: string;
+}
+
+// 盘点单查询参数
+export interface CheckOrderQuery {
+  checkType?: CheckType;
+  status?: BillStatus;
+  keyword?: string;
+  startDate?: string;
+  endDate?: string;
+  page: number;
+  pageSize: number;
+}
+
+// 订货单状态
+export enum PurchaseOrderStatus {
+  DRAFT = 'draft',         // 草稿
+  SUBMITTED = 'submitted', // 已提交
+  APPROVED = 'approved',   // 已审核
+  COMPLETED = 'completed', // 已完成
+  CANCELLED = 'cancelled'  // 已取消
+}
+
+// 订货单明细
+export interface PurchaseOrderDetail {
+  materialId: string;
+  materialName: string;
+  specification?: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+// 订货单
+export interface PurchaseOrder {
+  id: string;
+  billNo: string;
+  date: string;
+  supplierId: string;
+  supplierName: string;
+  items: PurchaseOrderDetail[];
+  totalAmount: number;
+  deliveryDate: string;
+  remark?: string;
+  operatorId: string;
+  operatorName: string;
+  status: PurchaseOrderStatus;
+  createTime: string;
+}
+
+// 订货单查询参数
+export interface PurchaseOrderQuery {
+  supplierId?: string;
+  status?: PurchaseOrderStatus;
+  keyword?: string;
+  startDate?: string;
+  endDate?: string;
+  page: number;
+  pageSize: number;
+}

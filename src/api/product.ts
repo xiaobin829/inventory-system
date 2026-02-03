@@ -345,10 +345,20 @@ export const updateProductBOM = (id: string, bomItems: BOMItem[]): Promise<void>
         reject(new Error('成品不存在'));
         return;
       }
-      
+
       product.bomItems = bomItems;
       product.updateTime = new Date().toISOString().replace('T', ' ').substring(0, 19);
       resolve();
     }, 500);
+  });
+};
+
+// 获取启用的成品列表（用于下拉选择）
+export const getEnabledProducts = (): Promise<Product[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const enabledProducts = mockProducts.filter(item => item.enabled);
+      resolve(enabledProducts);
+    }, 300);
   });
 };

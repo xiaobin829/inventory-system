@@ -1,14 +1,337 @@
 <template>
-  <div class="page-placeholder">
-    <t-empty description="功能开发中..." />
+  <div class="loss-page">
+    <div class="page-header">
+      <h2 class="page-title">损耗管理</h2>
+      <t-space>
+        <t-button theme="default" variant="outline">
+          <template #icon><t-icon name="download" /></template>
+          导出
+        </t-button>
+        <t-button theme="primary" @click="handleCreate">
+          <template #icon><t-icon name="add" /></template>
+          新建损耗单
+        </t-button>
+      </t-space>
+    </div>
+
+    <!-- 筛选区域 -->
+    <div class="filter-section">
+      <div class="filter-row">
+        <t-select
+          v-model="queryParams.lossType"
+          placeholder="损耗类型"
+          clearable
+          style="width: 140px;"
+          @change="loadData"
+        >
+          <t-option value="expiry" label="过期损耗" />
+          <t-option value="damage" label="损坏" />
+          <t-option value="shortage" label="盘亏" />
+          <t-option value="other" label="其他损耗" />
+        </t-select>
+
+        <t-select
+          v-model="queryParams.status"
+          placeholder="单据状态"
+          clearable
+          style="width: 130px;"
+          @change="loadData"
+        >
+          <t-option value="draft" label="草稿" />
+          <t-option value="submitted" label="已提交" />
+          <t-option value="approved" label="已审核" />
+          <t-option value="completed" label="已完成" />
+          <t-option value="cancelled" label="已取消" />
+        </t-select>
+
+        <t-date-range-picker
+          v-model="dateRange"
+          placeholder="选择日期范围"
+          style="width: 260px;"
+          @change="handleDateChange"
+        />
+
+        <t-input
+          v-model="queryParams.keyword"
+          placeholder="搜索单据编号"
+          clearable
+          style="width: 200px;"
+          @enter="loadData"
+          @clear="loadData"
+        >
+          <template #suffix-icon>
+            <t-icon name="search" @click="loadData" style="cursor: pointer;" />
+          </template>
+        </t-input>
+      </div>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="table-section">
+      <t-table
+        :data="tableData"
+        :columns="columns"
+        :loading="loading"
+        :pagination="pagination"
+        row-key="id"
+        @page-change="handlePageChange"
+      >
+        <!-- 单据信息列 -->
+        <template #billInfo="{ row }">
+          <div class="bill-info">
+            <div class="bill-no">{{ row.billNo }}</div>
+            <div class="bill-date">{{ row.date }}</div>
+          </div>
+        </template>
+
+        <!-- 损耗类型列 -->
+        <template #lossType="{ row }">
+          <t-tag v-if="row.lossType === 'expiry'" theme="danger" variant="light">过期损耗</t-tag>
+          <t-tag v-else-if="row.lossType === 'damage'" theme="warning" variant="light">损坏</t-tag>
+          <t-tag v-else-if="row.lossType === 'shortage'" variant="light" style="color: #722ed1; background: #f9f0ff; border-color: #d3adf7;">盘亏</t-tag>
+          <t-tag v-else variant="light">其他损耗</t-tag>
+        </template>
+
+        <!-- 状态列 -->
+        <template #status="{ row }">
+          <t-tag v-if="row.status === 'draft'" theme="default" variant="light">草稿</t-tag>
+          <t-tag v-else-if="row.status === 'submitted'" theme="primary" variant="light">已提交</t-tag>
+          <t-tag v-else-if="row.status === 'approved'" theme="warning" variant="light">已审核</t-tag>
+          <t-tag v-else-if="row.status === 'completed'" theme="success" variant="light">已完成</t-tag>
+          <t-tag v-else theme="danger" variant="light">已取消</t-tag>
+        </template>
+
+        <!-- 数量金额列 -->
+        <template #amount="{ row }">
+          <div class="amount-info">
+            <div class="amount-row">数量: {{ row.totalQuantity }}</div>
+            <div class="amount-row">金额: ¥{{ row.totalAmount.toFixed(2) }}</div>
+          </div>
+        </template>
+
+        <!-- 操作列 -->
+        <template #operation="{ row }">
+          <t-space :size="0">
+            <t-link theme="primary" @click="handleView(row)">查看</t-link>
+            <template v-if="row.status === 'draft'">
+              <t-divider layout="vertical" />
+              <t-link theme="primary" @click="handleEdit(row)">编辑</t-link>
+            </template>
+            <t-divider layout="vertical" />
+            <t-popconfirm content="确定删除该损耗单吗？" @confirm="handleDelete(row)">
+              <t-link theme="danger">删除</t-link>
+            </t-popconfirm>
+          </t-space>
+        </template>
+      </t-table>
+    </div>
+
+    <!-- 表单对话框 -->
+    <t-dialog
+      v-model:visible="formDialogVisible"
+      header="损耗单"
+      width="900px"
+    >
+      <p style="text-align: center; color: #999; padding: 40px 0;">
+        损耗单表单功能开发中...
+      </p>
+    </t-dialog>
   </div>
 </template>
 
-<style scoped>
-.page-placeholder {
+<script setup lang="ts">
+import { ref, reactive, onMounted } from 'vue';
+import type { PageInfo } from 'tdesign-vue-next';
+import { MessagePlugin } from 'tdesign-vue-next';
+import type { LossOrder, LossOrderQuery } from '@/types/bill';
+import { getLossOrders, deleteLossOrder } from '@/api/bill';
+
+// 日期范围
+const dateRange = ref<string[]>([]);
+
+// 查询参数
+const queryParams = reactive<LossOrderQuery>({
+  lossType: undefined,
+  status: undefined,
+  keyword: '',
+  startDate: undefined,
+  endDate: undefined,
+  page: 1,
+  pageSize: 10
+});
+
+// 表格数据
+const tableData = ref<LossOrder[]>([]);
+const loading = ref(false);
+
+// 分页配置
+const pagination = reactive({
+  current: 1,
+  pageSize: 10,
+  total: 0
+});
+
+// 对话框状态
+const formDialogVisible = ref(false);
+
+// 表格列配置
+const columns = [
+  { colKey: 'billInfo', title: '单据信息', width: 180, cell: 'billInfo' },
+  { colKey: 'warehouseName', title: '仓库', width: 120 },
+  { colKey: 'lossType', title: '损耗类型', width: 110, cell: 'lossType' },
+  { colKey: 'amount', title: '数量/金额', width: 140, cell: 'amount' },
+  { colKey: 'operatorName', title: '操作人', width: 100 },
+  { colKey: 'status', title: '状态', width: 100, cell: 'status' },
+  { colKey: 'operation', title: '操作', width: 160, fixed: 'right', cell: 'operation' }
+];
+
+// 加载数据
+const loadData = async () => {
+  loading.value = true;
+  try {
+    const params = {
+      ...queryParams,
+      page: pagination.current,
+      pageSize: pagination.pageSize
+    };
+
+    const { list, total } = await getLossOrders(params);
+    tableData.value = list;
+    pagination.total = total;
+  } catch (error) {
+    console.error('加载数据失败:', error);
+    MessagePlugin.error('加载数据失败');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 处理日期变化
+const handleDateChange = (val: string[]) => {
+  if (val && val.length === 2) {
+    queryParams.startDate = val[0];
+    queryParams.endDate = val[1];
+  } else {
+    queryParams.startDate = undefined;
+    queryParams.endDate = undefined;
+  }
+  loadData();
+};
+
+// 处理页码变化
+const handlePageChange = (pageInfo: PageInfo) => {
+  pagination.current = pageInfo.current;
+  pagination.pageSize = pageInfo.pageSize;
+  loadData();
+};
+
+// 处理新建
+const handleCreate = () => {
+  formDialogVisible.value = true;
+};
+
+// 处理查看
+const handleView = (row: LossOrder) => {
+  console.log('查看:', row);
+  formDialogVisible.value = true;
+};
+
+// 处理编辑
+const handleEdit = (row: LossOrder) => {
+  console.log('编辑:', row);
+  formDialogVisible.value = true;
+};
+
+// 处理删除
+const handleDelete = async (row: LossOrder) => {
+  try {
+    await deleteLossOrder(row.id);
+    MessagePlugin.success('删除成功');
+    loadData();
+  } catch (error) {
+    console.error('删除失败:', error);
+    MessagePlugin.error('删除失败');
+  }
+};
+
+// 组件挂载时加载数据
+onMounted(() => {
+  loadData();
+});
+</script>
+
+<style scoped lang="less">
+.loss-page {
+  height: 100%;
+  padding: 24px;
+  background: #f5f5f5;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
+  flex-direction: column;
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    .page-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+
+  .filter-section {
+    background: #fff;
+    border-radius: 4px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+
+    .filter-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+  }
+
+  .table-section {
+    flex: 1;
+    background: #fff;
+    border-radius: 4px;
+    padding: 24px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+  }
+}
+
+// 表格单元格样式
+.bill-info {
+  .bill-no {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 4px;
+  }
+
+  .bill-date {
+    font-size: 12px;
+    color: #999;
+  }
+}
+
+.amount-info {
+  font-size: 13px;
+
+  .amount-row {
+    margin-bottom: 4px;
+    color: #666;
+
+    &:last-child {
+      margin-bottom: 0;
+      color: #e34d59;
+      font-weight: 500;
+    }
+  }
 }
 </style>
