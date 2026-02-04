@@ -1,9 +1,37 @@
 /**
- * 入库单/损耗单/调拨单 Mock API
+ * 入库单/出库单/损耗单/调拨单 Mock API
  */
 
-import type { InboundBill, InboundBillQuery, LossOrder, LossOrderQuery, TransferOrder, TransferOrderQuery, CheckOrder, CheckOrderQuery, PurchaseOrder, PurchaseOrderQuery } from '@/types/bill';
-import { InboundType, BillStatus, LossType, CheckType, PurchaseOrderStatus } from '@/types/bill';
+import type { InboundBill, InboundBillQuery, OutboundBill, OutboundBillQuery, LossOrder, LossOrderQuery, TransferOrder, TransferOrderQuery, CheckOrder, CheckOrderQuery, PurchaseOrder, PurchaseOrderQuery } from '@/types/bill';
+import { InboundType, OutboundType, BillStatus, LossType, CheckType, PurchaseOrderStatus } from '@/types/bill';
+
+// 客户接口
+export interface Customer {
+  id: string;
+  name: string;
+  type: 'customer' | 'department';
+}
+
+// Mock 客户/部门数据
+const mockCustomers: Customer[] = [
+  { id: 'cust-001', name: '星巴克门店', type: 'customer' },
+  { id: 'cust-002', name: '喜茶门店', type: 'customer' },
+  { id: 'cust-003', name: '奈雪的茶', type: 'customer' },
+  { id: 'cust-004', name: '瑞幸咖啡', type: 'customer' },
+  { id: 'cust-005', name: '蜜雪冰城', type: 'customer' },
+  { id: 'dept-001', name: '生产部门', type: 'department' },
+  { id: 'dept-002', name: '研发部门', type: 'department' },
+  { id: 'dept-003', name: '行政部门', type: 'department' },
+];
+
+// 获取客户列表
+export const getCustomerList = (): Promise<Customer[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([...mockCustomers]);
+    }, 200);
+  });
+};
 
 export { CheckType };
 
@@ -163,6 +191,233 @@ export const getInboundBills = (params: InboundBillQuery): Promise<{ list: Inbou
   return new Promise((resolve) => {
     setTimeout(() => {
       let filteredData = [...mockInboundBills];
+
+      if (params.type) {
+        filteredData = filteredData.filter(item => item.type === params.type);
+      }
+
+      if (params.status) {
+        filteredData = filteredData.filter(item => item.status === params.status);
+      }
+
+      if (params.keyword) {
+        const keyword = params.keyword.toLowerCase();
+        filteredData = filteredData.filter(item =>
+          item.billNo.toLowerCase().includes(keyword)
+        );
+      }
+
+      const total = filteredData.length;
+      const start = (params.page - 1) * params.pageSize;
+      const end = start + params.pageSize;
+      const list = filteredData.slice(start, end);
+
+      resolve({ list, total });
+    }, 500);
+  });
+};
+
+// Mock 出库单数据
+let mockOutboundBills: OutboundBill[] = [
+  {
+    id: 'out-001',
+    billNo: 'CK-2024-0001',
+    type: OutboundType.SALE,
+    status: BillStatus.COMPLETED,
+    warehouseId: 'wh-1',
+    warehouseName: '中心仓库',
+    customerId: 'cust-001',
+    customerName: '星巴克门店',
+    items: [
+      {
+        id: 'item-1',
+        itemId: 'prod-1',
+        itemName: '招牌奶茶',
+        itemCode: 'PROD-001',
+        itemType: 'product',
+        specification: '500ml',
+        unit: '杯',
+        quantity: 100,
+        unitPrice: 18.00,
+        totalAmount: 1800
+      }
+    ],
+    totalQuantity: 100,
+    totalAmount: 1800,
+    operator: '张三',
+    approver: '李四',
+    outboundDate: '2024-01-30',
+    createTime: '2024-01-30 10:00:00',
+    updateTime: '2024-01-30 15:00:00',
+    approveTime: '2024-01-30 14:00:00',
+    completeTime: '2024-01-30 15:00:00'
+  },
+  {
+    id: 'out-002',
+    billNo: 'CK-2024-0002',
+    type: OutboundType.PRODUCTION,
+    status: BillStatus.APPROVED,
+    warehouseId: 'wh-1',
+    warehouseName: '中心仓库',
+    customerId: 'dept-001',
+    customerName: '生产部门',
+    items: [
+      {
+        id: 'item-2',
+        itemId: 'mat-3',
+        itemName: '红茶',
+        itemCode: 'MAT-003',
+        itemType: 'material',
+        specification: '100g/包',
+        unit: 'g',
+        quantity: 500,
+        unitPrice: 0.10,
+        totalAmount: 50
+      },
+      {
+        id: 'item-3',
+        itemId: 'mat-1',
+        itemName: '珍珠',
+        itemCode: 'MAT-001',
+        itemType: 'material',
+        specification: '1kg/袋',
+        unit: 'kg',
+        quantity: 5,
+        unitPrice: 25.00,
+        totalAmount: 125
+      }
+    ],
+    totalQuantity: 505,
+    totalAmount: 175,
+    operator: '王五',
+    approver: '李四',
+    outboundDate: '2024-01-31',
+    createTime: '2024-01-31 09:00:00',
+    updateTime: '2024-01-31 11:00:00',
+    approveTime: '2024-01-31 11:00:00'
+  },
+  {
+    id: 'out-003',
+    billNo: 'CK-2024-0003',
+    type: OutboundType.LOSS,
+    status: BillStatus.SUBMITTED,
+    warehouseId: 'wh-2',
+    warehouseName: '成品仓库',
+    items: [
+      {
+        id: 'item-4',
+        itemId: 'mat-5',
+        itemName: '椰果',
+        itemCode: 'MAT-005',
+        itemType: 'material',
+        specification: '500g/袋',
+        unit: '袋',
+        quantity: 10,
+        unitPrice: 12.00,
+        totalAmount: 120
+      }
+    ],
+    totalQuantity: 10,
+    totalAmount: 120,
+    operator: '赵六',
+    outboundDate: '2024-02-01',
+    createTime: '2024-02-01 14:00:00',
+    updateTime: '2024-02-01 14:30:00',
+    remark: '过期报损'
+  },
+  {
+    id: 'out-004',
+    billNo: 'CK-2024-0004',
+    type: OutboundType.TRANSFER,
+    status: BillStatus.DRAFT,
+    warehouseId: 'wh-1',
+    warehouseName: '中心仓库',
+    items: [
+      {
+        id: 'item-5',
+        itemId: 'mat-8',
+        itemName: '塑料杯',
+        itemCode: 'MAT-008',
+        itemType: 'material',
+        specification: '500ml',
+        unit: '个',
+        quantity: 300,
+        unitPrice: 0.50,
+        totalAmount: 150
+      },
+      {
+        id: 'item-6',
+        itemId: 'mat-9',
+        itemName: '杯盖',
+        itemCode: 'MAT-009',
+        itemType: 'material',
+        specification: '通用',
+        unit: '个',
+        quantity: 300,
+        unitPrice: 0.20,
+        totalAmount: 60
+      }
+    ],
+    totalQuantity: 600,
+    totalAmount: 210,
+    operator: '张三',
+    outboundDate: '2024-02-02',
+    createTime: '2024-02-02 10:00:00',
+    updateTime: '2024-02-02 10:00:00',
+    remark: '调拨至分店仓库'
+  },
+  {
+    id: 'out-005',
+    billNo: 'CK-2024-0005',
+    type: OutboundType.SALE,
+    status: BillStatus.COMPLETED,
+    warehouseId: 'wh-2',
+    warehouseName: '成品仓库',
+    customerId: 'cust-002',
+    customerName: '喜茶门店',
+    items: [
+      {
+        id: 'item-7',
+        itemId: 'prod-2',
+        itemName: '珍珠奶茶',
+        itemCode: 'PROD-002',
+        itemType: 'product',
+        specification: '500ml',
+        unit: '杯',
+        quantity: 50,
+        unitPrice: 20.00,
+        totalAmount: 1000
+      },
+      {
+        id: 'item-8',
+        itemId: 'prod-3',
+        itemName: '芒果冰沙',
+        itemCode: 'PROD-003',
+        itemType: 'product',
+        specification: '500ml',
+        unit: '杯',
+        quantity: 30,
+        unitPrice: 22.00,
+        totalAmount: 660
+      }
+    ],
+    totalQuantity: 80,
+    totalAmount: 1660,
+    operator: '李四',
+    approver: '张三',
+    outboundDate: '2024-02-03',
+    createTime: '2024-02-03 09:00:00',
+    updateTime: '2024-02-03 16:00:00',
+    approveTime: '2024-02-03 15:00:00',
+    completeTime: '2024-02-03 16:00:00'
+  }
+];
+
+// 获取出库单列表
+export const getOutboundBills = (params: OutboundBillQuery): Promise<{ list: OutboundBill[]; total: number }> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      let filteredData = [...mockOutboundBills];
 
       if (params.type) {
         filteredData = filteredData.filter(item => item.type === params.type);
